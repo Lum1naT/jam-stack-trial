@@ -14,7 +14,7 @@ app.get('/currency-conversion/:currency_from/:currency_to', (req, res) => {
     var options = {
         method: 'GET',
         url: 'https://currency-converter5.p.rapidapi.com/currency/convert',
-        params: {format: 'json', from: 'AUD', to: 'CAD', amount: '1'},
+        params: {format: 'json', from: currency_from, to: currency_to, amount: '1'},
         headers: {
           'x-rapidapi-key': 'b043a90f3cmshbd35b94ac225e93p1c1dd4jsn0d5de95c6088',
           'x-rapidapi-host': 'currency-converter5.p.rapidapi.com'
@@ -22,7 +22,7 @@ app.get('/currency-conversion/:currency_from/:currency_to', (req, res) => {
       };
       
       axios.request(options).then(function (response) {
-          console.log(response.data);
+          res.json(response.data);
       }).catch(function (error) {
           console.error(error);
       });
