@@ -44,6 +44,10 @@ export default {
       value_to: 23,
     }); //end of state
 
+    // fetches list of available currencies from the server
+    function get_available_currencies() {
+      //
+    }
     return {
       state,
     };
