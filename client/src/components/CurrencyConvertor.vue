@@ -1,13 +1,15 @@
 <template>
   <div id="currency-convertor">
     <p>
-      <small>{{}}</small>
+      Kurz pro zadané měny: <br />
+      {{ state.current_rate }}
     </p>
     <!-- Currency From -->
 
     <select
-      name="cuurency_from"
-      id="currency_from"
+      class="currency-select"
+      name="currency-from"
+      id="currency-from"
       v-model="state.currency_from"
     >
       <option v-for="(key, value) in state.list_of_currencies" :key="key">
@@ -16,9 +18,16 @@
     </select>
     <!-- End of Currency From -->
 
-    <span> </span>
+    <span class="between-select" @click="swap(state)"
+      ><img src="../assets/swap.png" class="swap-image" />
+    </span>
     <!-- Currency To -->
-    <select name="currency_to" id="currency_to" v-model="state.currency_to">
+    <select
+      class="currency-select"
+      name="currency-to"
+      id="currency-to"
+      v-model="state.currency_to"
+    >
       <option v-for="(key, value) in state.list_of_currencies" :key="key">
         {{ value }}
       </option>
@@ -28,15 +37,17 @@
     <br />
     <input
       type="number"
-      placeholder="currency_value"
+      placeholder="Enter a value"
       v-model="state.value_from"
+      min="0"
     />
     <span> </span>
     <input
       type="number"
-      placeholder="currency_value"
+      placeholder="Converted value"
       disabled
       v-model="state.value_to"
+      min="0"
     />
   </div>
 </template>
@@ -49,12 +60,13 @@ export default {
 
   setup() {
     const state = reactive({
-      currency_from: 'USD',
-      currency_to: 'USD',
+      currency_from: '',
+      currency_to: '',
       value_from: 0,
       value_to: 0,
       list_of_currencies: {},
       rates: [],
+      current_rate: 'Unknown',
     }); //end of state
 
     // fetches list of available currencies from the server
@@ -81,6 +93,7 @@ export default {
               to: currency_to,
               rate: response.data,
             });
+            state.current_rate = response.data;
           } else {
             // TODO: Show error to user as an element
             alert(
@@ -90,6 +103,7 @@ export default {
                 currency_to +
                 ' is less than 0.0000 or unknown. \n Try a different currency.'
             );
+            state.current_rate = 'Unknown';
           }
         });
       console.log(state.rates);
@@ -138,6 +152,18 @@ export default {
           //
         } else if (is_rate_known(state.currency_from, state.currency_to)) {
           // if the rate is known, convert the value
+
+          // setting current_rate
+          state.rates.forEach(function(data) {
+            if (
+              data.to == state.currency_to &&
+              data.from == state.currency_from
+            ) {
+              // rounding -> 100 = 2 decimal places, 1000 = 3 DP, ...
+              state.current_rate = data.rate;
+            }
+          });
+
           state.value_to = convert(
             state.currency_from,
             state.currency_to,
@@ -152,7 +178,7 @@ export default {
               state.currency_to
           );
           fetch_currency_rate(state.currency_from, state.currency_to);
-          
+
           state.value_to = convert(
             state.currency_from,
             state.currency_to,
@@ -166,6 +192,16 @@ export default {
       state,
     };
   }, // end of setup
+
+  methods: {
+    swap(state) {
+      var temp = state.currency_from;
+      state.currency_from = state.currency_to;
+      state.currency_to = temp;
+    },
+  },
 };
 </script>
-<style scoped></style>
+<style scoped>
+@import '../styles/style.css';
+</style>
