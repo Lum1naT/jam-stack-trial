@@ -51,8 +51,8 @@ export default {
     const state = reactive({
       currency_from: 'USD',
       currency_to: 'USD',
-      value_from: 12,
-      value_to: 23,
+      value_from: 0,
+      value_to: 0,
       list_of_currencies: {},
       rates: [],
     }); //end of state
@@ -75,63 +75,69 @@ export default {
             currency_to
         )
         .then(function(response) {
-          state.rates.push({
-            from: currency_from,
-            to: currency_to,
-            rate_from_to: response.data,
-            rate_to_from: 1 / response.data,
-          });
+          if (response.data != 0.0) {
+            state.rates.push({
+              from: currency_from,
+              to: currency_to,
+              rate: response.data,
+            });
+          } else {
+            // TODO: Show error to user as an element
+            alert(
+              'Currency rate for ' +
+                currency_from +
+                ' and ' +
+                currency_to +
+                ' is less than 0.0000 or unknown. \n Try a different currency.'
+            );
+          }
         });
       console.log(state.rates);
-    }
+    } // end of - func fetch_currency_rate
 
     function is_rate_known(currency_from, currency_to) {
-      //
-
-      var array = state.rates;
       // gets conversion data from state.rates
+      var array = state.rates;
+      var result = false;
+
       array.forEach(function(data) {
-        //
-        if (data.to == currency_from && data.from == currency_to) {
-          console.log('yes!');
-          return true;
-        }
+        // itterate thru arrays and find match of rates
+        if (result) return;
+
         if (data.to == currency_to && data.from == currency_from) {
           console.log('yes!');
-          return true;
+          result = true;
         }
       });
-
-      return false;
-    }
+      return result;
+    } // end of - func is_rate_known
 
     function convert(currency_from, currency_to, value) {
       var array = state.rates;
+      var result = 0;
       // gets conversion data from state.rates
       //
       array.forEach(function(data) {
-        if (data.to == currency_from && data.from == currency_to) {
-          console.log(data.currency_from_to * value);
-          return data.currency_to_from * value;
-        }
         if (data.to == currency_to && data.from == currency_from) {
-          console.log(data.currency_from_to * value);
-          return data.currency_from_to * value;
+          console.log(data.rate);
+          result = data.rate * value;
+          // rounding -> 100 = 2 decimal places, 1000 = 3 DP, ...
+          result = Math.round((result + Number.EPSILON) * 100) / 100;
         }
       });
-      return 0;
-    }
+      return result;
+    } // end of - func convert
 
     // watches changes on selects and inputs
     watch(
       () => [state.currency_from, state.currency_to, state.value_from],
       () => {
         if (state.currency_from == state.currency_to) {
+          // if currencies match, the values match as well
           state.value_to = state.value_from;
-          console.log('currencies match!');
           //
         } else if (is_rate_known(state.currency_from, state.currency_to)) {
-          // if the rate is already known by client
+          // if the rate is known, convert the value
           state.value_to = convert(
             state.currency_from,
             state.currency_to,
@@ -139,7 +145,14 @@ export default {
           );
         } else {
           // if the rate is unknown yet, fetch currency data
+          console.log(
+            'fetching currency rate of ' +
+              state.currency_from +
+              ' and ' +
+              state.currency_to
+          );
           fetch_currency_rate(state.currency_from, state.currency_to);
+          
           state.value_to = convert(
             state.currency_from,
             state.currency_to,
