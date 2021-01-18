@@ -49,11 +49,15 @@
       v-model="state.value_to"
       min="0"
     />
+    <button class="clipboard-span" @click="toClipboard(state.value_to)">
+      <img src="../assets/clipboard.png" class="swap-image" />
+    </button>
   </div>
 </template>
 <script>
 import { reactive, watch } from 'vue';
 import axios from 'axios';
+import { toClipboard } from '@soerenmartius/vue3-clipboard';
 
 export default {
   name: 'CurrencyConvertor',
@@ -106,7 +110,7 @@ export default {
             state.current_rate = 'Unknown';
           }
         });
-      console.log(state.rates);
+      return true;
     } // end of - func fetch_currency_rate
 
     function is_rate_known(currency_from, currency_to) {
@@ -125,7 +129,9 @@ export default {
       });
       return result;
     } // end of - func is_rate_known
-
+    function refresh(input) {
+      state.value_to = input;
+    }
     function convert(currency_from, currency_to, value) {
       var array = state.rates;
       var result = 0;
@@ -139,51 +145,64 @@ export default {
           result = Math.round((result + Number.EPSILON) * 100) / 100;
         }
       });
+      refresh(result);
+
       return result;
     } // end of - func convert
 
+    watch(
+      () => [state.rates],
+      () => {
+        state.value_to = convert(
+          state.currency_from,
+          state.currency_to,
+          state.value_from
+        );
+      }
+    );
     // watches changes on selects and inputs
     watch(
       () => [state.currency_from, state.currency_to, state.value_from],
       () => {
-        if (state.currency_from == state.currency_to) {
-          // if currencies match, the values match as well
-          state.value_to = state.value_from;
-          //
-        } else if (is_rate_known(state.currency_from, state.currency_to)) {
-          // if the rate is known, convert the value
+        if (state.currency_from != '' && state.currency_to != '') {
+          if (state.currency_from == state.currency_to) {
+            // if currencies match, the values match as well
+            state.value_to = state.value_from;
+            //
+          } else if (is_rate_known(state.currency_from, state.currency_to)) {
+            // if the rate is known, convert the value
 
-          // setting current_rate
-          state.rates.forEach(function(data) {
-            if (
-              data.to == state.currency_to &&
-              data.from == state.currency_from
-            ) {
-              // rounding -> 100 = 2 decimal places, 1000 = 3 DP, ...
-              state.current_rate = data.rate;
-            }
-          });
+            // setting current_rate
+            state.rates.forEach(function(data) {
+              if (
+                data.to == state.currency_to &&
+                data.from == state.currency_from
+              ) {
+                // rounding -> 100 = 2 decimal places, 1000 = 3 DP, ...
+                state.current_rate = data.rate;
+              }
+            });
 
-          state.value_to = convert(
-            state.currency_from,
-            state.currency_to,
-            state.value_from
-          );
-        } else {
-          // if the rate is unknown yet, fetch currency data
-          console.log(
-            'fetching currency rate of ' +
-              state.currency_from +
-              ' and ' +
-              state.currency_to
-          );
-          fetch_currency_rate(state.currency_from, state.currency_to);
-
-          state.value_to = convert(
-            state.currency_from,
-            state.currency_to,
-            state.value_from
-          );
+            state.value_to = convert(
+              state.currency_from,
+              state.currency_to,
+              state.value_from
+            );
+          } else {
+            // if the rate is unknown yet, fetch currency data
+            console.log(
+              'fetching currency rate of ' +
+                state.currency_from +
+                ' and ' +
+                state.currency_to
+            );
+            fetch_currency_rate(state.currency_from, state.currency_to);
+            state.value_to = convert(
+              state.currency_from,
+              state.currency_to,
+              state.value_from
+            );
+          }
         }
       }
     );
@@ -199,6 +218,7 @@ export default {
       state.currency_from = state.currency_to;
       state.currency_to = temp;
     },
+    toClipboard,
   },
 };
 </script>
