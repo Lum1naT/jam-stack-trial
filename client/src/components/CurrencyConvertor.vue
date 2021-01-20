@@ -1,4 +1,5 @@
 <template>
+  <div id="overlay"></div>
   <div id="currency-convertor">
     <div class="inner-inputs">
       <p>
@@ -80,13 +81,40 @@ export default {
     // fetches list of available currencies from the server
     function get_available_currencies() {
       //
+      var error = false;
+      console.log('Fetching currencies.');
       axios
         .get('http://localhost:2708/get-available-currencies')
-        .then((response) => (state.list_of_currencies = response.data));
+        .catch(function(error) {
+          if (error.response) {
+            error = true;
+
+            // Request made and server responded
+            alert(
+              'The server responded with an error: \n' + error.response.data
+            );
+            console.log(error.response.data);
+          } else if (error.request) {
+            error = true;
+
+            // The request was made but no response was received
+            alert(
+              'The server timed out or it is down. \n Refresh or try again later.'
+            );
+          } else {
+            error = true;
+            // Something happened in setting up the request that triggered an Error
+            alert('Error: ', error.message);
+          }
+        })
+        .then(function(response) {
+          if (!error) state.list_of_currencies = response.data;
+        });
     }
     get_available_currencies();
 
     function fetch_currency_rate(currency_from, currency_to) {
+      var error = false;
       axios
         .get(
           'http://localhost:2708/currency-conversion/' +
@@ -94,8 +122,30 @@ export default {
             '/' +
             currency_to
         )
+        .catch(function(error) {
+          if (error.response) {
+            error = true;
+
+            // Request made and server responded
+            alert(
+              'The server responded with an error: \n' + error.response.data
+            );
+            console.log(error.response.data);
+          } else if (error.request) {
+            error = true;
+
+            // The request was made but no response was received
+            alert(
+              'The server timed out or it is down. \n Refresh or try again later.'
+            );
+          } else {
+            error = true;
+            // Something happened in setting up the request that triggered an Error
+            alert('Error: ', error.message);
+          }
+        })
         .then(function(response) {
-          if (response.data != 0.0) {
+          if (!error && response.data != 0.0) {
             state.rates.push({
               from: currency_from,
               to: currency_to,
@@ -206,7 +256,7 @@ export default {
             // this ensures that the rates change even when swapping them
             while (original_length == state.rates.length) {
               await sleep(100);
-              console.log(original_length + ' - sleeping');
+              //console.log(original_length + ' - sleeping');
             }
             state.value_to = convert(
               state.currency_from,
