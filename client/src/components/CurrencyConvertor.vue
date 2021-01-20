@@ -1,54 +1,58 @@
 <template>
   <div id="currency-convertor">
-    <p>
-      Kurz pro zadané měny: <br />
-      {{ state.current_rate }}
-    </p>
-    <!-- Currency From -->
+    <div class="inner-inputs">
+      <p>
+        Kurz pro zadané měny: <br />
+        {{ state.current_rate }}
+      </p>
+      <!-- Currency From -->
 
-    <select
-      class="currency-select"
-      name="currency-from"
-      id="currency-from"
-      v-model="state.currency_from"
-    >
-      <option v-for="(key, value) in state.list_of_currencies" :key="key">
-        {{ value }}
-      </option>
-    </select>
-    <!-- End of Currency From -->
+      <select
+        class="currency-select"
+        name="currency-from"
+        id="currency-from"
+        v-model="state.currency_from"
+      >
+        <option v-for="(key, value) in state.list_of_currencies" :key="key">
+          {{ value }}
+        </option>
+      </select>
+      <!-- End of Currency From -->
 
-    <span class="between-select" @click="swap(state)"
-      ><img src="../assets/swap.png" class="swap-image" />
-    </span>
-    <!-- Currency To -->
-    <select
-      class="currency-select"
-      name="currency-to"
-      id="currency-to"
-      v-model="state.currency_to"
-    >
-      <option v-for="(key, value) in state.list_of_currencies" :key="key">
-        {{ value }}
-      </option>
-    </select>
-    <!-- End of Currency To -->
+      <span class="between-select" @click="swap(state)"
+        ><img src="../assets/swap.png" class="swap-image" />
+      </span>
+      <!-- Currency To -->
+      <select
+        class="currency-select"
+        name="currency-to"
+        id="currency-to"
+        v-model="state.currency_to"
+      >
+        <option v-for="(key, value) in state.list_of_currencies" :key="key">
+          {{ value }}
+        </option>
+      </select>
+      <!-- End of Currency To -->
 
-    <br />
-    <input
-      type="number"
-      placeholder="Enter a value"
-      v-model="state.value_from"
-      min="0"
-    />
-    <span> </span>
-    <input
-      type="number"
-      placeholder="Converted value"
-      disabled
-      v-model="state.value_to"
-      min="0"
-    />
+      <br />
+      <input
+        type="number"
+        placeholder="Enter a value"
+        v-model="state.value_from"
+        min="0"
+        class="input-left"
+      />
+      <span> </span>
+      <input
+        type="number"
+        placeholder="Converted value"
+        disabled
+        v-model="state.value_to"
+        min="0"
+        class="input-right"
+      />
+    </div>
     <button class="clipboard-span" @click="toClipboard(state.value_to)">
       <img src="../assets/clipboard.png" class="swap-image" />
     </button>
@@ -150,20 +154,19 @@ export default {
       return result;
     } // end of - func convert
 
-    watch(
-      () => [state.rates],
-      () => {
-        state.value_to = convert(
-          state.currency_from,
-          state.currency_to,
-          state.value_from
-        );
-      }
-    );
+    // modern way to write sleep function, apparently > makes sense, needs to be used within async func with await - line 165 & 204
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function get_rates_length() {
+      return state.rates.length;
+    }
+
     // watches changes on selects and inputs
     watch(
       () => [state.currency_from, state.currency_to, state.value_from],
-      () => {
+      async () => {
         if (state.currency_from != '' && state.currency_to != '') {
           if (state.currency_from == state.currency_to) {
             // if currencies match, the values match as well
@@ -196,7 +199,15 @@ export default {
                 ' and ' +
                 state.currency_to
             );
+            var original_length = get_rates_length();
+
             fetch_currency_rate(state.currency_from, state.currency_to);
+
+            // this ensures that the rates change even when swapping them
+            while (original_length == state.rates.length) {
+              await sleep(100);
+              console.log(original_length + ' - sleeping');
+            }
             state.value_to = convert(
               state.currency_from,
               state.currency_to,

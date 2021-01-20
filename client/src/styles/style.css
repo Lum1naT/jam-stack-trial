@@ -32,9 +32,12 @@ select {
   box-sizing: border-box;
 }
 
-input {
-  margin-left: 20px;
+.input-left {
   margin-right: 20px;
+}
+
+.input-right {
+  margin-left: 20px;
 }
 
 .swap-image {
@@ -46,8 +49,13 @@ input {
 }
 
 .clipboard-span {
-  display: block;
   cursor: pointer;
+  vertical-align: middle;
+  margin: auto;
+}
+
+.inner-inputs {
+  display: inline-block;
 }
 
 /*# sourceMappingURL=style.css.map */
