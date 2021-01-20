@@ -6,6 +6,12 @@ const axios = require('axios').default;
 
 app.use(cors())
 
+
+/**
+ * 
+ * To learn for this - return json with success code for next API
+ * 
+ */
 /* 
 * currency conversion
 * returns rate for 1 unit of :currency_from to currency_to
